@@ -28,7 +28,6 @@ func main() {
 	}
 
 	sum := sha256.Sum256(passbytes)
-	fmt.Printf("Password hash: %x\n", sum)
 
 	k, err := newX25519IdentityFromScalar(sum[:])
 	if err != nil {
