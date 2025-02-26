@@ -60,11 +60,23 @@ func main() {
 	// if user is not seeing private keyfile, which also contains public key,
 	// also duplicate public key it to stderr,
 	// but if user sees public key via stdout, no need for duplication
-	if !term.IsTerminal(int(os.Stdout.Fd())) {
-		fmt.Fprintf(os.Stderr, "Public key: %s\n", k.Recipient())
+	if outputFile != "" {
+		if !rawOutput {
+			fmt.Printf("Public key: %s\n", k.Recipient())
+		} else {
+			fmt.Printf("%s", k.Recipient())
+		}
 	}
 
-	err = writeSecretKey(os.Stdout, k)
+	output := os.Stdout
+	if outputFile != "" {
+		output, err = os.Create(outputFile)
+		if err != nil {
+			errorf("failed to create output file, error: %s", err)
+		}
+	}
+
+	err = writeSecretKey(output, k, !rawOutput)
 	if err != nil {
 		fmt.Printf("Failed to write secret key to file, error: %s\n", err)
 	}
@@ -72,7 +84,7 @@ func main() {
 
 func getPasswordBytes() ([]byte, error) {
 	if term.IsTerminal(int(os.Stdin.Fd())) {
-		fmt.Print("Enter password: ")
+		fmt.Fprintf(os.Stderr, "Enter password: ")
 		passbytes, err := term.ReadPassword(int(os.Stdin.Fd()))
 		fmt.Println()
 		return passbytes, err
@@ -81,25 +93,26 @@ func getPasswordBytes() ([]byte, error) {
 	}
 }
 
-func writeSecretKey(f *os.File, key *age.X25519Identity) error {
+func writeSecretKey(f *os.File, key *age.X25519Identity, verbose bool) error {
 	var err error
 
-	_, err = fmt.Fprintf(f, "# created: %s\n", time.Now().Format(time.RFC3339))
-	if err != nil {
-		return err
+	if verbose {
+		_, err = fmt.Fprintf(f, "# created: %s\n", time.Now().Format(time.RFC3339))
+		if err != nil {
+			return err
+		}
+
+		_, err = fmt.Fprintf(f, "# public key: %s\n", key.Recipient())
+		if err != nil {
+			return err
+		}
+
+		_, err = fmt.Fprintf(f, "%s\n", key)
+	} else {
+		_, err = fmt.Fprintf(f, "%s", key)
 	}
 
-	_, err = fmt.Fprintf(f, "# public key: %s\n", key.Recipient())
-	if err != nil {
-		return err
-	}
-
-	_, err = fmt.Fprintf(f, "%s\n", key)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return err
 }
 
 // almost a copy of private function in age/x25519.go
