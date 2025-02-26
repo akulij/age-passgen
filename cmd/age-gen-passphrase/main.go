@@ -1,10 +1,14 @@
 package main
 
 import (
+	"errors"
 	"fmt"
+	"io"
+	"os"
 	"time"
 	"unsafe"
-    "errors"
+
+	"golang.org/x/term"
 
 	"crypto/sha256"
 	"golang.org/x/crypto/curve25519"
@@ -17,15 +21,15 @@ type X25519Identity struct {
 }
 
 func main() {
-	var passphrase string
+	passbytes, err := getPasswordBytes()
+	if err != nil {
+		fmt.Printf("Failed to get password, error: %s\n", err)
+	}
 
-	fmt.Print("Enter password: ")
-	fmt.Scanln(&passphrase)
-
-	sum := sha256.Sum256([]byte(passphrase))
+	sum := sha256.Sum256(passbytes)
 	fmt.Printf("Password hash: %x\n", sum)
 
-    k, err := newX25519IdentityFromScalar(sum[:])
+	k, err := newX25519IdentityFromScalar(sum[:])
 	if err != nil {
 		fmt.Printf("internal error: %v", err)
 	}
@@ -35,6 +39,17 @@ func main() {
 	fmt.Printf("# created: %s\n", time.Now().Format(time.RFC3339))
 	fmt.Printf("# public key: %s\n", k.Recipient())
 	fmt.Printf("%s\n", k)
+}
+
+func getPasswordBytes() ([]byte, error) {
+	if term.IsTerminal(int(os.Stdin.Fd())) {
+		fmt.Print("Enter password: ")
+		passbytes, err := term.ReadPassword(int(os.Stdin.Fd()))
+		fmt.Println()
+		return passbytes, err
+	} else {
+		return io.ReadAll(os.Stdin)
+	}
 }
 
 // almost a copy of private function in age/x25519.go
