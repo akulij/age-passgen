@@ -35,17 +35,17 @@ func main() {
 		errorf("internal error: %v", err)
 	}
 
-    // if user is not seeing private keyfile, which also contains public key,
-    // also duplicate public key it to stderr,
-    // but if user sees public key via stdout, no need for duplication
-    if !term.IsTerminal(int(os.Stdout.Fd())) {
-	    fmt.Fprintf(os.Stderr, "Public key: %s\n", k.Recipient())
-    }
+	// if user is not seeing private keyfile, which also contains public key,
+	// also duplicate public key it to stderr,
+	// but if user sees public key via stdout, no need for duplication
+	if !term.IsTerminal(int(os.Stdout.Fd())) {
+		fmt.Fprintf(os.Stderr, "Public key: %s\n", k.Recipient())
+	}
 
-    err = writeSecretKey(os.Stdout, k)
-    if err != nil {
-        fmt.Printf("Failed to write secret key to file, error: %s\n", err)
-    }
+	err = writeSecretKey(os.Stdout, k)
+	if err != nil {
+		fmt.Printf("Failed to write secret key to file, error: %s\n", err)
+	}
 }
 
 func getPasswordBytes() ([]byte, error) {
@@ -60,18 +60,24 @@ func getPasswordBytes() ([]byte, error) {
 }
 
 func writeSecretKey(f *os.File, key *age.X25519Identity) error {
-    var err error
+	var err error
 
-    _, err = fmt.Fprintf(f, "# created: %s\n", time.Now().Format(time.RFC3339))
-    if err != nil { return err; }
+	_, err = fmt.Fprintf(f, "# created: %s\n", time.Now().Format(time.RFC3339))
+	if err != nil {
+		return err
+	}
 
-    _, err = fmt.Fprintf(f, "# public key: %s\n", key.Recipient())
-    if err != nil { return err; }
+	_, err = fmt.Fprintf(f, "# public key: %s\n", key.Recipient())
+	if err != nil {
+		return err
+	}
 
-    _, err = fmt.Fprintf(f, "%s\n", key)
-    if err != nil { return err; }
+	_, err = fmt.Fprintf(f, "%s\n", key)
+	if err != nil {
+		return err
+	}
 
-    return nil
+	return nil
 }
 
 // almost a copy of private function in age/x25519.go
