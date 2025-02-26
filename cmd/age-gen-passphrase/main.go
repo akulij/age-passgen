@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"flag"
 	"fmt"
 	"io"
 	"log"
@@ -21,7 +22,29 @@ type X25519Identity struct {
 	secretKey, ourPublicKey []byte
 }
 
+const usage = `Usage:
+    age-gen-passphrase [-o OUTPUT] [--raw-input]
+
+Options:
+    -o, --output OUTPUT       Write the result to the file at path OUTPUT.
+    --raw-output              Print stripped keys (without additional text or comments)
+
+Everything is similar to age-keygen`
+
 func main() {
+	log.SetFlags(0)
+	flag.Usage = func() { fmt.Fprintf(os.Stderr, "%s\n", usage) }
+
+	var (
+		rawOutput  bool
+		outputFile string
+	)
+
+	flag.BoolVar(&rawOutput, "raw-output", false, "Print stripped keys (without additional text or comments)")
+	flag.StringVar(&outputFile, "o", "", "Write the result to the file at path OUTPUT")
+	flag.StringVar(&outputFile, "output", "", "Write the result to the file at path OUTPUT")
+	flag.Parse()
+
 	passbytes, err := getPasswordBytes()
 	if err != nil {
 		errorf("Failed to get password, error: %s\n", err)
