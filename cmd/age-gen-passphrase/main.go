@@ -17,7 +17,12 @@ type X25519Identity struct {
 }
 
 func main() {
-	sum := sha256.Sum256([]byte("some secret password phrase"))
+	var passphrase string
+
+	fmt.Print("Enter password: ")
+	fmt.Scanln(&passphrase)
+
+	sum := sha256.Sum256([]byte(passphrase))
 	fmt.Printf("Password hash: %x\n", sum)
 
     k, err := newX25519IdentityFromScalar(sum[:])
