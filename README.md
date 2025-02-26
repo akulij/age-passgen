@@ -10,5 +10,5 @@ Exact amount of required characters can be calculated by formula: $\lceil 256 / 
 
 
 ## TODO
-[ ] piped/terminal output as raw/verbose
+[X] piped/terminal output as raw/verbose
 [ ] handle broken pipe signal since program will so much depend on pipes
