@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"os"
 	"time"
 	"unsafe"
@@ -23,7 +24,7 @@ type X25519Identity struct {
 func main() {
 	passbytes, err := getPasswordBytes()
 	if err != nil {
-		fmt.Printf("Failed to get password, error: %s\n", err)
+		errorf("Failed to get password, error: %s\n", err)
 	}
 
 	sum := sha256.Sum256(passbytes)
@@ -31,7 +32,7 @@ func main() {
 
 	k, err := newX25519IdentityFromScalar(sum[:])
 	if err != nil {
-		fmt.Printf("internal error: %v", err)
+		errorf("internal error: %v", err)
 	}
 
 	fmt.Printf("Public key: %s\n", k.Recipient())
@@ -63,4 +64,8 @@ func newX25519IdentityFromScalar(secretKey []byte) (*age.X25519Identity, error) 
 	copy(i.secretKey, secretKey)
 	i.ourPublicKey, _ = curve25519.X25519(i.secretKey, curve25519.Basepoint)
 	return (*age.X25519Identity)(unsafe.Pointer(i)), nil
+}
+
+func errorf(format string, v ...interface{}) {
+	log.Fatalf("age-gen-passphrase ERROR: "+format, v...)
 }
