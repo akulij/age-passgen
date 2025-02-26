@@ -10,6 +10,5 @@ Exact amount of required characters can be calculated by formula: $\lceil 256 / 
 
 
 ## TODO
-[ ] output identities instead of keys (to be closer in user experience to age-keygen)
 [ ] piped/terminal output as raw/verbose
 [ ] handle broken pipe signal since program will so much depend on pipes
