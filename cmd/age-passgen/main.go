@@ -7,8 +7,10 @@ import (
 	"io"
 	"log"
 	"os"
+	"os/signal"
 	"slices"
 	"strconv"
+	"syscall"
 	"time"
 	"unsafe"
 
@@ -51,6 +53,7 @@ type Flags struct {
 }
 
 func main() {
+	go setSystemSignalHandlers()
 	flags, err := parseFlags()
 	if err != nil {
 		errorf("error while parsing arguments: %s\n", err)
@@ -95,6 +98,30 @@ func main() {
 	if err != nil {
 		fmt.Printf("Failed to write secret key to file, error: %s\n", err)
 	}
+}
+
+func setSystemSignalHandlers() {
+	go handleSigint()
+}
+
+func handleSigint() {
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+
+	state, err := term.GetState(int(os.Stdout.Fd()))
+	if err != nil {
+		fmt.Fprint(os.Stderr, "Failed to save state of the terminal")
+		return
+	}
+
+	<-c
+
+	err = term.Restore(int(os.Stdout.Fd()), state)
+	if err != nil {
+		errorf("Failed to restore state of the terminal")
+	}
+
+	os.Exit(1)
 }
 
 func parseFlags() (*Flags, error) {
