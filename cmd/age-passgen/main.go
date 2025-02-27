@@ -101,6 +101,18 @@ func main() {
 }
 
 func setSystemSignalHandlers() {
+	go handleSigpipe()
+}
+
+func handleSigpipe() {
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt, syscall.SIGPIPE)
+
+	<-c
+
+	errorf("Recieved SIGPIPE. Check if your programs that give input or recieve input do not stops before this one")
+
+	os.Exit(1)
 }
 
 func parseFlags() (*Flags, error) {
