@@ -25,7 +25,7 @@ type X25519Identity struct {
 }
 
 const usage = `Usage:
-    age-gen-passphrase [-o OUTPUT] [--raw-input]
+    age-passgen [-o OUTPUT] [--raw-input]
 
 Options:
     -o, --output OUTPUT       Write the result to the file at path OUTPUT.
@@ -179,5 +179,5 @@ func newX25519IdentityFromScalar(secretKey []byte) (*age.X25519Identity, error) 
 }
 
 func errorf(format string, v ...interface{}) {
-	log.Fatalf("age-gen-passphrase ERROR: "+format, v...)
+	log.Fatalf("age-passgen ERROR: "+format, v...)
 }

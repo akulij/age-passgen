@@ -1,7 +1,7 @@
 # Generate age keys from passphrase
 
 ## Description
-This utility (age-gen-passphrase) generates secret and public keys (into stdout) from your entered passphrase or piped stdin
+This utility (age-passgen) generates secret and public keys (into stdout) from your entered passphrase or piped stdin
 Strong password highly recomended
 
 ## Password selection

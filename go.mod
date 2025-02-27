@@ -1,4 +1,4 @@
-module github.com/akulij/age-gen-passphrase
+module github.com/akulij/age-passgen
 
 go 1.22.2
 
