@@ -30,6 +30,15 @@ Options:
     --raw-output              Print stripped keys (without additional text or comments)
 
 Mostly similar to age-keygen
+Required password strenght can be changes via --entropy-level flag. Possible values
+high, medium (default), low, verylow, stupid and numbers from 1 to 4 (inclusive).
+
+Each word or number is mapped following this list:
+- high    (or 4) - 44 characters
+- medium  (or 3) - 22 characters
+- low     (or 2) - 12 characters
+- verylow (or 1) -  8 characters
+- stupid         - no limit
 `
 
 func main() {
@@ -37,13 +46,15 @@ func main() {
 	flag.Usage = func() { fmt.Fprintf(os.Stderr, "%s", usage) }
 
 	var (
-		rawOutput  bool
-		outputFile string
+		rawOutput    bool
+		outputFile   string
+		entropyLevel string
 	)
 
 	flag.BoolVar(&rawOutput, "raw-output", false, "Print stripped keys (without additional text or comments)")
 	flag.StringVar(&outputFile, "o", "", "Write the result to the file at path OUTPUT")
 	flag.StringVar(&outputFile, "output", "", "Write the result to the file at path OUTPUT")
+	flag.StringVar(&entropyLevel, "entropy-level", "medium", "Manages required strenght of password. Read more in --help")
 	flag.Parse()
 
 	passbytes, err := getPasswordBytes()
