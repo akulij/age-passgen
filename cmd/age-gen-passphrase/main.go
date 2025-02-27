@@ -7,6 +7,8 @@ import (
 	"io"
 	"log"
 	"os"
+	"slices"
+	"strconv"
 	"time"
 	"unsafe"
 
@@ -57,9 +59,18 @@ func main() {
 	flag.StringVar(&entropyLevel, "entropy-level", "medium", "Manages required strenght of password. Read more in --help")
 	flag.Parse()
 
+	eLevel, err := parseEntropyLevel(entropyLevel)
+	if err != nil {
+		errorf("error while parsing --entropy-level argument: %s\n", err)
+	}
+
 	passbytes, err := getPasswordBytes()
 	if err != nil {
 		errorf("Failed to get password, error: %s\n", err)
+	}
+	valid := isEntropyValid(passbytes, eLevel)
+	if !valid {
+		errorf("You should choose stroger password!!! (or change entropy level, read more with --help)\n")
 	}
 
 	sum := sha256.Sum256(passbytes)
@@ -92,6 +103,32 @@ func main() {
 	if err != nil {
 		fmt.Printf("Failed to write secret key to file, error: %s\n", err)
 	}
+}
+
+func parseEntropyLevel(entropyLevel string) (int, error) {
+	if i, err := strconv.Atoi(entropyLevel); err == nil {
+		if i == 0 {
+			return 0, errors.New("No such entropy level `0`, try `stupid`")
+		} else if 1 <= i && i <= 4 {
+			return i, nil
+		} else {
+			return 0, errors.New("Wrong entropy level `" + strconv.Itoa(i) + "`, level should be within range 1 to 4")
+		}
+	}
+	//if it is not number, let's try words
+	levelWords := [...]string{"stupid", "verylow", "low", "medium", "high"}
+	idx := slices.Index(levelWords[:], entropyLevel)
+	if idx == -1 {
+		return 0, errors.New("Such entropy level does not exists: " + entropyLevel + "\nMay be misstyped?")
+	}
+
+	return idx, nil
+}
+
+func isEntropyValid(passbytes []byte, entropyLevel int) bool {
+	lengthsMap := [...]int{0, 8, 12, 22, 44}
+
+	return len(passbytes) >= lengthsMap[entropyLevel]
 }
 
 func getPasswordBytes() ([]byte, error) {
