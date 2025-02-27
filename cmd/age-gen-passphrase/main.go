@@ -30,6 +30,7 @@ const usage = `Usage:
 Options:
     -o, --output OUTPUT       Write the result to the file at path OUTPUT.
     --raw-output              Print stripped keys (without additional text or comments)
+    --entropy-level VALUE     Manages required strenght of password (more info down below)
 
 Mostly similar to age-keygen
 Required password strenght can be changes via --entropy-level flag. Possible values
