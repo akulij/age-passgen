@@ -44,7 +44,60 @@ Each word or number is mapped following this list:
 - stupid         - no limit
 `
 
+type Flags struct {
+	RawOutput    bool
+	OutputFile   string
+	EntropyLevel int
+}
+
 func main() {
+	flags, err := parseFlags()
+	if err != nil {
+		errorf("error while parsing arguments: %s\n", err)
+	}
+
+	passbytes, err := getPasswordBytes()
+	if err != nil {
+		errorf("Failed to get password, error: %s\n", err)
+	}
+	valid := isEntropyValid(passbytes, flags.EntropyLevel)
+	if !valid {
+		errorf("You should choose stroger password!!! (or change entropy level, read more with --help)\n")
+	}
+
+	sum := sha256.Sum256(passbytes)
+
+	k, err := newX25519IdentityFromScalar(sum[:])
+	if err != nil {
+		errorf("internal error: %v", err)
+	}
+
+	// if user is not seeing private keyfile, which also contains public key,
+	// also duplicate public key it to stderr,
+	// but if user sees public key via stdout, no need for duplication
+	if flags.OutputFile != "" {
+		if !flags.RawOutput {
+			fmt.Printf("Public key: %s\n", k.Recipient())
+		} else {
+			fmt.Printf("%s", k.Recipient())
+		}
+	}
+
+	output := os.Stdout
+	if flags.OutputFile != "" {
+		output, err = os.Create(flags.OutputFile)
+		if err != nil {
+			errorf("failed to create output file, error: %s", err)
+		}
+	}
+
+	err = writeSecretKey(output, k, !flags.RawOutput)
+	if err != nil {
+		fmt.Printf("Failed to write secret key to file, error: %s\n", err)
+	}
+}
+
+func parseFlags() (*Flags, error) {
 	log.SetFlags(0)
 	flag.Usage = func() { fmt.Fprintf(os.Stderr, "%s", usage) }
 
@@ -62,48 +115,14 @@ func main() {
 
 	eLevel, err := parseEntropyLevel(entropyLevel)
 	if err != nil {
-		errorf("error while parsing --entropy-level argument: %s\n", err)
+		return nil, err
 	}
 
-	passbytes, err := getPasswordBytes()
-	if err != nil {
-		errorf("Failed to get password, error: %s\n", err)
-	}
-	valid := isEntropyValid(passbytes, eLevel)
-	if !valid {
-		errorf("You should choose stroger password!!! (or change entropy level, read more with --help)\n")
-	}
-
-	sum := sha256.Sum256(passbytes)
-
-	k, err := newX25519IdentityFromScalar(sum[:])
-	if err != nil {
-		errorf("internal error: %v", err)
-	}
-
-	// if user is not seeing private keyfile, which also contains public key,
-	// also duplicate public key it to stderr,
-	// but if user sees public key via stdout, no need for duplication
-	if outputFile != "" {
-		if !rawOutput {
-			fmt.Printf("Public key: %s\n", k.Recipient())
-		} else {
-			fmt.Printf("%s", k.Recipient())
-		}
-	}
-
-	output := os.Stdout
-	if outputFile != "" {
-		output, err = os.Create(outputFile)
-		if err != nil {
-			errorf("failed to create output file, error: %s", err)
-		}
-	}
-
-	err = writeSecretKey(output, k, !rawOutput)
-	if err != nil {
-		fmt.Printf("Failed to write secret key to file, error: %s\n", err)
-	}
+	return &Flags{
+		RawOutput:    rawOutput,
+		OutputFile:   outputFile,
+		EntropyLevel: eLevel,
+	}, nil
 }
 
 func parseEntropyLevel(entropyLevel string) (int, error) {
