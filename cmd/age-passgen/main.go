@@ -53,7 +53,7 @@ type Flags struct {
 }
 
 func main() {
-	go setSystemSignalHandlers()
+	setSystemSignalHandlers()
 	flags, err := parseFlags()
 	if err != nil {
 		errorf("error while parsing arguments: %s\n", err)
