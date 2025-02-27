@@ -12,3 +12,4 @@ Exact amount of required characters can be calculated by formula: $\lceil 256 / 
 ## TODO
 [X] piped/terminal output as raw/verbose
 [ ] handle broken pipe signal since program will so much depend on pipes
+[ ] option to read hex number that will be used instead of hash of password (usefull if user already has sha 256 hash of smth or want to use something else as input instead)
