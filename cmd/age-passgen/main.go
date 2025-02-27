@@ -101,27 +101,6 @@ func main() {
 }
 
 func setSystemSignalHandlers() {
-	go handleSigint()
-}
-
-func handleSigint() {
-	c := make(chan os.Signal, 1)
-	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
-
-	state, err := term.GetState(int(os.Stdout.Fd()))
-	if err != nil {
-		fmt.Fprint(os.Stderr, "Failed to save state of the terminal")
-		return
-	}
-
-	<-c
-
-	err = term.Restore(int(os.Stdout.Fd()), state)
-	if err != nil {
-		errorf("Failed to restore state of the terminal")
-	}
-
-	os.Exit(1)
 }
 
 func parseFlags() (*Flags, error) {
