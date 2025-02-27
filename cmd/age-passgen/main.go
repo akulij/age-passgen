@@ -180,10 +180,17 @@ func isEntropyValid(passbytes []byte, entropyLevel int) bool {
 
 func getPasswordBytes() ([]byte, error) {
 	if term.IsTerminal(int(os.Stdin.Fd())) {
-		fmt.Fprintf(os.Stderr, "Enter password: ")
-		passbytes, err := term.ReadPassword(int(os.Stdin.Fd()))
-		fmt.Println()
-		return passbytes, err
+		oldState, err := term.MakeRaw(0)
+		defer term.Restore(0, oldState)
+
+		screen := struct {
+			io.Reader
+			io.Writer
+		}{os.Stdin, os.Stdout}
+		t := term.NewTerminal(screen, "")
+		pass, err := t.ReadPassword("Enter pass: ")
+
+		return []byte(pass), err
 	} else {
 		return io.ReadAll(os.Stdin)
 	}
