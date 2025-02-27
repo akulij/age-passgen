@@ -29,11 +29,12 @@ Options:
     -o, --output OUTPUT       Write the result to the file at path OUTPUT.
     --raw-output              Print stripped keys (without additional text or comments)
 
-Everything is similar to age-keygen`
+Mostly similar to age-keygen
+`
 
 func main() {
 	log.SetFlags(0)
-	flag.Usage = func() { fmt.Fprintf(os.Stderr, "%s\n", usage) }
+	flag.Usage = func() { fmt.Fprintf(os.Stderr, "%s", usage) }
 
 	var (
 		rawOutput  bool
