@@ -33,6 +33,7 @@ Options:
     -o, --output OUTPUT       Write the result to the file at path OUTPUT.
     --raw-output              Print stripped keys (without additional text or comments)
     --entropy-level VALUE     Manages required strenght of password (more info down below)
+    --input-type TYPE         Type of input from stdin. Can be 'password' (default), 'hash', 'raw'
 
 Mostly similar to age-keygen
 Required password strenght can be changes via --entropy-level flag. Possible values
@@ -46,10 +47,19 @@ Each word or number is mapped following this list:
 - stupid         - no limit
 `
 
+type InputType int
+
+const (
+	InputPassword InputType = iota
+	InputHash
+	InputRaw
+)
+
 type Flags struct {
 	RawOutput    bool
 	OutputFile   string
 	EntropyLevel int
+	InputType    InputType
 }
 
 func main() {
@@ -123,15 +133,22 @@ func parseFlags() (*Flags, error) {
 		rawOutput    bool
 		outputFile   string
 		entropyLevel string
+		inputType    string
 	)
 
 	flag.BoolVar(&rawOutput, "raw-output", false, "Print stripped keys (without additional text or comments)")
 	flag.StringVar(&outputFile, "o", "", "Write the result to the file at path OUTPUT")
 	flag.StringVar(&outputFile, "output", "", "Write the result to the file at path OUTPUT")
 	flag.StringVar(&entropyLevel, "entropy-level", "medium", "Manages required strenght of password. Read more in --help")
+	flag.StringVar(&inputType, "input-type", "password", "Type of input from stdin. Can be 'password' (default), 'hash', 'raw'")
 	flag.Parse()
 
 	eLevel, err := parseEntropyLevel(entropyLevel)
+	if err != nil {
+		return nil, err
+	}
+
+	iType, err := parseInputType(inputType)
 	if err != nil {
 		return nil, err
 	}
@@ -140,7 +157,23 @@ func parseFlags() (*Flags, error) {
 		RawOutput:    rawOutput,
 		OutputFile:   outputFile,
 		EntropyLevel: eLevel,
+		InputType:    iType,
 	}, nil
+}
+
+func parseInputType(inputType string) (InputType, error) {
+	m := map[string]InputType{
+		"password": InputPassword,
+		"hash":     InputHash,
+		"raw":      InputRaw,
+	}
+
+	iType, ok := m[inputType]
+	if !ok {
+		return InputPassword, errors.New("wrong input type")
+	}
+
+	return iType, nil
 }
 
 func parseEntropyLevel(entropyLevel string) (int, error) {
