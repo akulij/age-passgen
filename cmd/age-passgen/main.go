@@ -78,9 +78,9 @@ func main() {
 		errorf("You should choose stroger password!!! (or change entropy level, read more with --help)\n")
 	}
 
-	sum := sha256.Sum256(passbytes)
+	secretKey := sha256.Sum256(passbytes)
 
-	k, err := newX25519IdentityFromScalar(sum[:])
+	k, err := newX25519IdentityFromScalar(secretKey[:])
 	if err != nil {
 		errorf("internal error: %v", err)
 	}
