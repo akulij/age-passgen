@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/hex"
 	"errors"
 	"flag"
 	"fmt"
@@ -10,6 +11,7 @@ import (
 	"os/signal"
 	"slices"
 	"strconv"
+	"strings"
 	"syscall"
 	"time"
 	"unsafe"
@@ -69,16 +71,25 @@ func main() {
 		errorf("error while parsing arguments: %s\n", err)
 	}
 
-	passbytes, err := getPasswordBytes()
-	if err != nil {
-		errorf("Failed to get password, error: %s\n", err)
+	var secretKey [curve25519.ScalarSize]byte
+	if flags.InputType == InputPassword {
+		secretKey, err = getInputPassword(flags.EntropyLevel)
+		if err != nil {
+			errorf("Failed to get password, error: %s\n", err)
+		}
+	} else if flags.InputType == InputHash {
+		secretKey, err = getInputHash()
+		if err != nil {
+			errorf("Failed to read hash, error: %s\n", err)
+		}
+	} else if flags.InputType == InputRaw {
+		secretKey, err = getInputRaw()
+		if err != nil {
+			errorf("Failed to read raw data, error: %s\n", err)
+		}
+	} else {
+		errorf("No such input type implemented!!!")
 	}
-	valid := isEntropyValid(passbytes, flags.EntropyLevel)
-	if !valid {
-		errorf("You should choose stroger password!!! (or change entropy level, read more with --help)\n")
-	}
-
-	secretKey := sha256.Sum256(passbytes)
 
 	k, err := newX25519IdentityFromScalar(secretKey[:])
 	if err != nil {
@@ -108,6 +119,57 @@ func main() {
 	if err != nil {
 		fmt.Printf("Failed to write secret key to file, error: %s\n", err)
 	}
+}
+
+func getInputPassword(entropyLevel int) ([curve25519.ScalarSize]byte, error) {
+	passbytes, err := getPasswordBytes()
+	if err != nil {
+		return [curve25519.ScalarSize]byte{}, err
+	}
+	valid := isEntropyValid(passbytes, entropyLevel)
+	if !valid {
+		return [curve25519.ScalarSize]byte{}, errors.New("You should choose stroger password!!! (or change entropy level, read more with --help)\n")
+	}
+
+	return sha256.Sum256(passbytes), nil
+}
+
+func getInputHash() ([curve25519.ScalarSize]byte, error) {
+	hashStringBytes, err := getPasswordBytes()
+	if err != nil {
+		return [curve25519.ScalarSize]byte{}, err
+	}
+	hashString := strings.TrimSpace(string(hashStringBytes))
+	passbytes, err := hex.DecodeString(hashString)
+	if err != nil {
+		fmt.Printf("HEXSTR:%s|\n", hashString)
+		return [curve25519.ScalarSize]byte{}, errors.New(fmt.Sprintf("Unable to decode hash, error: %s\n", err))
+	}
+	if len(passbytes) != curve25519.ScalarSize {
+		return [curve25519.ScalarSize]byte{}, errors.New(fmt.Sprintf("Wrong input lenght of sha256 hash! (may be it is not a hash at all) Expected %d bytes, got: %d\n", curve25519.ScalarSize, len(passbytes)))
+	}
+
+	// making `possibly` stack allocated out of the one in heap
+	var key [curve25519.ScalarSize]byte
+	copy(key[:], passbytes)
+
+	return key, nil
+}
+
+func getInputRaw() ([curve25519.ScalarSize]byte, error) {
+	passbytes, err := getPasswordBytes()
+	if err != nil {
+		return [curve25519.ScalarSize]byte{}, err
+	}
+	if len(passbytes) != curve25519.ScalarSize {
+		return [curve25519.ScalarSize]byte{}, errors.New(fmt.Sprintf("Wrong amount of entered data! Expected %d bytes, got: %d\n", curve25519.ScalarSize, len(passbytes)))
+	}
+
+	// making `possibly` stack allocated out of the one in heap
+	var key [curve25519.ScalarSize]byte
+	copy(key[:], passbytes)
+
+	return key, nil
 }
 
 func setSystemSignalHandlers() {
